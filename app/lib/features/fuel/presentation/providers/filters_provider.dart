@@ -17,6 +17,8 @@ class FiltriNotifier extends Notifier<Filtri> {
   void setSoloAutostrade(bool value) =>
       state = state.copyWith(soloAutostrade: value);
 
+  void applyAll(Filtri filtri) => state = filtri;
+
   void reset() => state = const Filtri();
 }
 

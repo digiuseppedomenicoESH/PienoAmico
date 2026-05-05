@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/errors/exceptions.dart';
 
@@ -17,11 +18,22 @@ class LocationService {
       throw const AppException(AppErrorType.permessoGpsNegato);
     }
 
-    return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10),
-      ),
-    );
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 30),
+        ),
+      );
+    } on TimeoutException {
+      // Emulatore lento: ritenta con precisione ridotta senza timeout
+      return Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+        ),
+      );
+    } catch (e) {
+      throw AppException(AppErrorType.gpsDisabilitato, dettaglio: e.toString());
+    }
   }
 }

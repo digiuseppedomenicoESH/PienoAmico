@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
-  // Prezzi
-  static const prezzoLarge = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
+  // ── Prezzi ───────────────────────────────────────────────
+  static const prezzoHero = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.8,
     color: AppColors.textPrimary,
+  );
+  static const prezzoLarge = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
     letterSpacing: -0.5,
+    color: AppColors.textPrimary,
   );
   static const prezzoSmall = TextStyle(
     fontSize: 14,
@@ -15,41 +21,67 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // Lista
+  // ── Card distributore ────────────────────────────────────
   static const nomeDistributore = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
+    letterSpacing: -0.1,
   );
-  static const indirizzoDistributore = TextStyle(
+  static const bandiera = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+  );
+  static const indirizzo = TextStyle(
     fontSize: 13,
     color: AppColors.textSecondary,
+    height: 1.3,
   );
   static const distanza = TextStyle(
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primary,
   );
 
-  // Badge
+  // ── Badge ────────────────────────────────────────────────
   static const badgeLabel = TextStyle(
     fontSize: 11,
-    fontWeight: FontWeight.w600,
-    color: Colors.white,
-    letterSpacing: 0.3,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.2,
   );
 
-  // Stato
+  // ── AppBar ───────────────────────────────────────────────
+  static const appBarLogo = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+    letterSpacing: -0.5,
+  );
+  static const appBarLogoAccent = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    color: AppColors.accent,
+    letterSpacing: -0.5,
+  );
+
+  // ── Stati (loading, empty, error) ────────────────────────
+  static const statoTitolo = TextStyle(
+    fontSize: 17,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
   static const statoMessaggio = TextStyle(
-    fontSize: 15,
+    fontSize: 14,
     color: AppColors.textSecondary,
     height: 1.5,
   );
 
-  // AppBar
-  static const appBarTitle = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w700,
-    color: Colors.white,
+  // ── Sezioni e label ──────────────────────────────────────
+  static const sectionLabel = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+    letterSpacing: 0.5,
   );
 }
