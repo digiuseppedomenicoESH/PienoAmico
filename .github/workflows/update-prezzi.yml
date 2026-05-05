@@ -1,0 +1,36 @@
+name: Aggiornamento Prezzi Carburante
+
+on:
+  schedule:
+    # 07:30 UTC = 08:30 ora italiana (CET) / 09:30 (CEST estate)
+    - cron: '30 6 * * *'
+    # 13:30 UTC = 14:30 ora italiana
+    - cron: '30 12 * * *'
+  # Esecuzione manuale da GitHub UI (utile per debug e primo setup)
+  workflow_dispatch:
+
+jobs:
+  update:
+    name: Import dati MIMIT → Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Install dependencies
+        run: cd scripts && npm ci
+
+      - name: Run import script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: cd scripts && node import.js

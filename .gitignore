@@ -1,0 +1,32 @@
+# Environment / segreti — MAI committare
+scripts/.env
+*.env
+*.env.local
+
+# Node
+scripts/node_modules/
+scripts/package-lock.json
+
+# Flutter / Dart
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/build/
+app/.idea/
+app/*.iml
+app/android/.gradle/
+app/android/local.properties
+app/android/key.properties      # keystore firma — MAI committare
+app/android/app/google-services.json  # AdMob config — contiene App ID
+
+# Hive box files (generati a runtime)
+*.hive
+*.lock
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/settings.json
+*.swp
