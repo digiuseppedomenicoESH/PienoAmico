@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/double_ext.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/distributore.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import 'price_badge.dart';
 
-class FuelCard extends StatefulWidget {
+class FuelCard extends ConsumerStatefulWidget {
   final Distributore distributore;
   final PriceTier tier;
   final VoidCallback onTap;
@@ -20,10 +22,10 @@ class FuelCard extends StatefulWidget {
   });
 
   @override
-  State<FuelCard> createState() => _FuelCardState();
+  ConsumerState<FuelCard> createState() => _FuelCardState();
 }
 
-class _FuelCardState extends State<FuelCard>
+class _FuelCardState extends ConsumerState<FuelCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _opacity;
@@ -66,6 +68,9 @@ class _FuelCardState extends State<FuelCard>
 
   @override
   Widget build(BuildContext context) {
+    final isFav = ref.watch(
+      favoritesProvider.select((s) => s.contains(widget.distributore.id)),
+    );
     return FadeTransition(
       opacity: _opacity,
       child: SlideTransition(
@@ -77,6 +82,9 @@ class _FuelCardState extends State<FuelCard>
           tierBg: _tierBg,
           index: widget.index,
           onTap: widget.onTap,
+          isFavorite: isFav,
+          onFavoriteTap: () =>
+              ref.read(favoritesProvider.notifier).toggle(widget.distributore.id),
         ),
       ),
     );
@@ -90,6 +98,8 @@ class _CardBody extends StatelessWidget {
   final Color tierBg;
   final int index;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback onFavoriteTap;
 
   const _CardBody({
     required this.distributore,
@@ -98,6 +108,8 @@ class _CardBody extends StatelessWidget {
     required this.tierBg,
     required this.index,
     required this.onTap,
+    required this.isFavorite,
+    required this.onFavoriteTap,
   });
 
   @override
@@ -128,8 +140,13 @@ class _CardBody extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Rank number + tier bar
-              _RankColumn(index: index, color: tierColor),
+              // Rank number + cuore preferiti
+              _RankColumn(
+                index: index,
+                color: tierColor,
+                isFavorite: isFavorite,
+                onFavoriteTap: onFavoriteTap,
+              ),
               // Station info
               Expanded(
                 child: Padding(
@@ -219,13 +236,20 @@ class _CardBody extends StatelessWidget {
 class _RankColumn extends StatelessWidget {
   final int index;
   final Color color;
-  const _RankColumn({required this.index, required this.color});
+  final bool isFavorite;
+  final VoidCallback onFavoriteTap;
+
+  const _RankColumn({
+    required this.index,
+    required this.color,
+    required this.isFavorite,
+    required this.onFavoriteTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 40,
-      alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -234,10 +258,21 @@ class _RankColumn extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: index == 0
-                  ? color
-                  : AppColors.textDisabled,
+              color: index == 0 ? color : AppColors.textDisabled,
               height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          GestureDetector(
+            onTap: onFavoriteTap,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                size: 14,
+                color: isFavorite ? AppColors.primary : AppColors.textDisabled,
+              ),
             ),
           ),
         ],

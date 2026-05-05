@@ -11,6 +11,10 @@ void main() async {
 
   await Hive.initFlutter();
 
+  // Aperto prima di runApp per permettere accesso sincrono
+  // in OnboardingRepository e SettingsRepository.
+  await Hive.openBox('settings');
+
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
     anonKey: AppConstants.supabaseAnonKey,

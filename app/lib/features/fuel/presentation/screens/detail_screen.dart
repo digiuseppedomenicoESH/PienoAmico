@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/distributore.dart';
 import '../../domain/entities/filtri.dart';
 import '../../domain/entities/prezzo_record.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../providers/fuel_provider.dart';
 import '../widgets/price_badge.dart';
 
@@ -56,6 +57,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   Widget build(BuildContext context) {
     final d = widget.distributore;
     final prezziAsync = ref.watch(stationPricesProvider(widget.distributoreId));
+    final isFav = ref.watch(
+      favoritesProvider.select((s) => s.contains(widget.distributoreId)),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -65,6 +69,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           _HeroAppBar(
             distributore: d,
             titleVisible: _titleVisible,
+            isFavorite: isFav,
+            onFavoriteTap: () =>
+                ref.read(favoritesProvider.notifier).toggle(widget.distributoreId),
           ),
           SliverToBoxAdapter(
             child: Column(
@@ -113,7 +120,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 class _HeroAppBar extends StatelessWidget {
   final Distributore? distributore;
   final bool titleVisible;
-  const _HeroAppBar({required this.distributore, required this.titleVisible});
+  final bool isFavorite;
+  final VoidCallback onFavoriteTap;
+
+  const _HeroAppBar({
+    required this.distributore,
+    required this.titleVisible,
+    required this.isFavorite,
+    required this.onFavoriteTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +155,29 @@ class _HeroAppBar extends StatelessWidget {
           ),
         ),
       ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Material(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onFavoriteTap,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  isFavorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isFavorite ? AppColors.primary : AppColors.textSecondary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
       // Il titolo appare solo quando il hero è collassato
       title: AnimatedOpacity(
         opacity: titleVisible ? 1.0 : 0.0,

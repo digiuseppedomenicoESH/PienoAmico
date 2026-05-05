@@ -6,11 +6,15 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/distributore.dart';
+import '../../domain/entities/filtri.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
+import '../providers/filters_provider.dart';
 import '../providers/fuel_provider.dart';
 import '../providers/view_mode_provider.dart';
 import '../../../location/presentation/providers/location_provider.dart';
-import '../widgets/filters_bar.dart';
+import '../widgets/filters_bottom_sheet.dart';
 import '../widgets/fuel_card.dart';
 import '../widgets/fuel_map.dart';
 import '../widgets/price_badge.dart';
@@ -34,18 +38,11 @@ class HomeScreen extends ConsumerWidget {
         titleSpacing: 16,
         title: const AppLogo(),
         actions: [
-          // Toggle lista / mappa
           _ViewToggle(current: viewMode),
           const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(
-              Icons.settings_outlined,
-              size: 22,
-              color: AppColors.textSecondary,
-            ),
-            onPressed: () => context.push('/settings'),
-            tooltip: 'Impostazioni',
-          ),
+          const _FilterBtn(),
+          const SizedBox(width: 4),
+          const _FavoritesToggleBtn(),
           const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
@@ -55,7 +52,6 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          const FiltersBar(),
           Expanded(
             child: fuelAsync.when(
               loading: () =>
@@ -90,6 +86,13 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref,
     List<Distributore> results,
   ) {
+    final favIds = ref.watch(favoritesProvider);
+    final showFavorites = ref.watch(showFavoritesProvider);
+
+    if (showFavorites) {
+      return _buildFavoritesView(context, ref, results, favIds);
+    }
+
     if (results.isEmpty) {
       return const EmptyView(
         message: 'Nessun distributore trovato\nnel raggio selezionato',
@@ -105,23 +108,94 @@ class HomeScreen extends ConsumerWidget {
       },
       color: AppColors.primary,
       backgroundColor: AppColors.backgroundCard,
-      child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        itemCount: results.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (ctx, i) {
-          if (i == 0) return _ListHeader(count: results.length);
-          final idx = i - 1;
-          return FuelCard(
-            distributore: results[idx],
-            tier: tiers[idx],
-            index: idx,
-            onTap: () => context.push(
-              '/detail/${results[idx].id}',
-              extra: results[idx],
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _ListHeader(count: results.length)),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            sliver: SliverList.separated(
+              itemCount: results.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (ctx, i) => FuelCard(
+                distributore: results[i],
+                tier: tiers[i],
+                index: i,
+                onTap: () => context.push(
+                  '/detail/${results[i].id}',
+                  extra: results[i],
+                ),
+              ),
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoritesView(
+    BuildContext context,
+    WidgetRef ref,
+    List<Distributore> results,
+    Set<int> favIds,
+  ) {
+    if (favIds.isEmpty) {
+      return const EmptyView(
+        message: 'Nessun preferito salvato\nTocca ♡ su un distributore per aggiungerlo',
+      );
+    }
+
+    final tiers = _computeTiers(results);
+    final favEntries = results.asMap().entries
+        .where((e) => favIds.contains(e.value.id))
+        .toList();
+
+    if (favEntries.isEmpty) {
+      return const EmptyView(
+        message: 'Nessun preferito\nnel raggio selezionato',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () {
+        ref.invalidate(fuelResultsProvider);
+        return ref.read(fuelResultsProvider.future);
+      },
+      color: AppColors.primary,
+      backgroundColor: AppColors.backgroundCard,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.favorite_rounded,
+                      size: 12, color: AppColors.primary),
+                  const SizedBox(width: 5),
+                  Text('PREFERITI (${favEntries.length})',
+                      style: AppTextStyles.sectionLabel),
+                ],
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            sliver: SliverList.separated(
+              itemCount: favEntries.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (ctx, i) {
+                final idx = favEntries[i].key;
+                final d = favEntries[i].value;
+                return FuelCard(
+                  distributore: d,
+                  tier: tiers[idx],
+                  index: idx,
+                  onTap: () => context.push('/detail/${d.id}', extra: d),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -274,6 +348,78 @@ class _ListHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Bottone filtri ───────────────────────────────────────────────────────────
+
+class _FilterBtn extends ConsumerWidget {
+  const _FilterBtn();
+
+  bool _hasActive(Filtri f) =>
+      f.carburante != 'benzina' ||
+      f.isSelf != null ||
+      f.raggioMetri != 5000 ||
+      f.soloAutostrade;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filtri = ref.watch(filtriProvider);
+    final active = _hasActive(filtri);
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          icon: Icon(
+            Icons.tune_rounded,
+            size: 22,
+            color: active ? AppColors.primary : AppColors.textSecondary,
+          ),
+          onPressed: () => FiltersBottomSheet.show(context),
+          tooltip: 'Filtri',
+        ),
+        if (active)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Toggle preferiti / ricerca ───────────────────────────────────────────────
+
+class _FavoritesToggleBtn extends ConsumerWidget {
+  const _FavoritesToggleBtn();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final showFavorites = ref.watch(showFavoritesProvider);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+      child: IconButton(
+        key: ValueKey(showFavorites),
+        icon: Icon(
+          showFavorites ? Icons.search_rounded : Icons.favorite_rounded,
+          size: 22,
+          color: showFavorites ? AppColors.primary : AppColors.textSecondary,
+        ),
+        onPressed: () =>
+            ref.read(showFavoritesProvider.notifier).state = !showFavorites,
+        tooltip: showFavorites ? 'Cerca distributori' : 'Preferiti',
       ),
     );
   }
