@@ -32,24 +32,22 @@ class PriceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: _bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: _color.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _color.withValues(alpha: 0.3), width: 1),
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             isSelf ? 'SELF' : 'SERV',
             style: AppTextStyles.badgeLabel.copyWith(
-              color: _color.withValues(alpha: 0.75),
-              fontSize: 9,
-              letterSpacing: 0.4,
+              color: _color.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(height: 2),
           Text(
             prezzo.asPrezzo,
             style: AppTextStyles.prezzoSmall.copyWith(color: _color),

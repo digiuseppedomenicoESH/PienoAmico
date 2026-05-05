@@ -13,7 +13,7 @@ class FiltersBar extends ConsumerWidget {
     final filtri = ref.watch(filtriProvider);
 
     return Container(
-      height: 48,
+      height: 52,
       decoration: const BoxDecoration(
         color: AppColors.background,
         border: Border(bottom: BorderSide(color: AppColors.divider)),
@@ -23,29 +23,18 @@ class FiltersBar extends ConsumerWidget {
           Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               itemCount: Filtri.carburantiDisponibili.length + 1,
               separatorBuilder: (_, __) => const SizedBox(width: 6),
               itemBuilder: (context, i) {
                 if (i < Filtri.carburantiDisponibili.length) {
-                  final c        = Filtri.carburantiDisponibili[i];
+                  final c = Filtri.carburantiDisponibili[i];
                   final selected = filtri.carburante == c;
-                  return ChoiceChip(
-                    label: Text(Filtri.carburantiLabel[c] ?? c),
+                  return _FilterPill(
+                    label: Filtri.carburantiLabel[c] ?? c,
                     selected: selected,
-                    onSelected: (_) =>
+                    onTap: () =>
                         ref.read(filtriProvider.notifier).setCarburante(c),
-                    labelStyle: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: selected ? AppColors.primary : AppColors.textSecondary,
-                    ),
-                    selectedColor: AppColors.primarySurface,
-                    side: BorderSide(
-                      color: selected ? AppColors.primary : AppColors.surfaceBorder,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
                   );
                 }
                 return _RaggioChip(filtri: filtri);
@@ -53,7 +42,7 @@ class FiltersBar extends ConsumerWidget {
             ),
           ),
           Container(
-            width: 48,
+            width: 52,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               border: Border(left: BorderSide(color: AppColors.divider)),
@@ -61,6 +50,47 @@ class FiltersBar extends ConsumerWidget {
             child: _FiltersIconButton(filtri: filtri),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryMuted : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: selected ? AppColors.primary : AppColors.textSecondary,
+            letterSpacing: 0.1,
+          ),
+        ),
       ),
     );
   }
@@ -76,27 +106,28 @@ class _RaggioChip extends ConsumerWidget {
     return GestureDetector(
       onTap: () => _showMenu(context, ref),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: AppColors.backgroundGrey,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.surfaceBorder),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.radar, size: 12, color: AppColors.textSecondary),
+            const Icon(Icons.radar_rounded, size: 12, color: AppColors.textSecondary),
             const SizedBox(width: 4),
             Text(
               '$km km',
               style: const TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(width: 2),
-            const Icon(Icons.arrow_drop_down, size: 14, color: AppColors.textSecondary),
+            const Icon(Icons.keyboard_arrow_down_rounded,
+                size: 14, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -105,14 +136,19 @@ class _RaggioChip extends ConsumerWidget {
 
   void _showMenu(BuildContext context, WidgetRef ref) {
     const options = [1000, 2000, 5000, 10000, 20000];
-    const labels  = ['1 km', '2 km', '5 km', '10 km', '20 km'];
+    const labels = ['1 km', '2 km', '5 km', '10 km', '20 km'];
 
     showMenu<int>(
       context: context,
+      color: AppColors.backgroundCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.border),
+      ),
       position: RelativeRect.fromLTRB(
         MediaQuery.of(context).size.width - 140,
-        56,
-        12,
+        58,
+        14,
         0,
       ),
       items: List.generate(
@@ -124,15 +160,24 @@ class _RaggioChip extends ConsumerWidget {
             children: [
               Icon(
                 filtri.raggioMetri == options[i]
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
                 size: 16,
                 color: filtri.raggioMetri == options[i]
                     ? AppColors.primary
                     : AppColors.textSecondary,
               ),
               const SizedBox(width: 8),
-              Text(labels[i], style: const TextStyle(fontSize: 13)),
+              Text(
+                labels[i],
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: filtri.raggioMetri == options[i]
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
+                ),
+              ),
             ],
           ),
         ),
@@ -155,22 +200,32 @@ class _FiltersIconButton extends ConsumerWidget {
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
-        IconButton(
-          icon: const Icon(Icons.tune, size: 20),
-          color: _hasActive ? AppColors.primary : AppColors.textSecondary,
-          onPressed: () => FiltersBottomSheet.show(context),
-          padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
+        Material(
+          color: _hasActive ? AppColors.primaryMuted : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => FiltersBottomSheet.show(context),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.tune_rounded,
+                size: 20,
+                color:
+                    _hasActive ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ),
         ),
         if (_hasActive)
           Positioned(
-            top: 6,
-            right: 6,
+            top: 4,
+            right: 4,
             child: Container(
               width: 7,
               height: 7,
               decoration: const BoxDecoration(
-                color: AppColors.accent,
+                color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
             ),

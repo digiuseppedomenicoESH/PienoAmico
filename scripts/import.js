@@ -2,7 +2,7 @@
 // Eseguito da GitHub Actions due volte al giorno (08:30 e 14:30 ora italiana).
 
 import 'dotenv/config';
-import { batchUpsert } from './supabase_client.js';
+import { batchUpsert, markInactiveDistributori, cleanupPrezziStale } from './supabase_client.js';
 import { parseAnagrafica } from './parsers/anagrafica.js';
 import { parsePrezzi } from './parsers/prezzi.js';
 
@@ -14,7 +14,7 @@ const DRY_RUN = process.env.DRY_RUN === 'true';
 async function fetchCsv(url) {
   const res = await fetch(url, {
     headers: { 'Accept-Encoding': 'gzip, deflate' },
-    signal: AbortSignal.timeout(30_000), // timeout 30s
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
@@ -26,7 +26,14 @@ async function fetchCsv(url) {
 
 async function run() {
   const startedAt = Date.now();
-  console.log(JSON.stringify({ event: 'import_start', dry_run: DRY_RUN, ts: new Date().toISOString() }));
+
+  // Timestamp registrato PRIMA di qualsiasi fetch.
+  // Le righe upsertate in questo run avranno updated_at >= runStartedAt
+  // (il fetch dura almeno qualche secondo, quindi il clock avanza).
+  // Le righe con updated_at < runStartedAt non erano nel CSV corrente → da pulire.
+  const runStartedAt = new Date().toISOString();
+
+  console.log(JSON.stringify({ event: 'import_start', dry_run: DRY_RUN, run_started_at: runStartedAt }));
 
   // ── Step 1: Anagrafica ───────────────────────────────────────────────────
   console.log(JSON.stringify({ event: 'fetch_anagrafica_start' }));
@@ -34,33 +41,61 @@ async function run() {
   const distributori  = await parseAnagrafica(anagraficaCsv);
   console.log(JSON.stringify({ event: 'fetch_anagrafica_done', count: distributori.length }));
 
+  let d_ins = 0;
   if (!DRY_RUN) {
-    const { inserted: d_ins, errors: d_err } = await batchUpsert('distributori', distributori, 500);
-    console.log(JSON.stringify({ event: 'upsert_distributori', inserted: d_ins, errors: d_err }));
+    const { inserted, errors: d_err } = await batchUpsert('distributori', distributori, 500);
+    d_ins = inserted;
+    console.log(JSON.stringify({ event: 'upsert_distributori', inserted, errors: d_err }));
+
+    // Marca inattivi i distributori non più presenti nel CSV MIMIT.
+    // Sicuro solo se abbiamo importato abbastanza righe (soglia 10.000).
+    const { marked, skipped, error: markErr } = await markInactiveDistributori(runStartedAt, d_ins);
+    console.log(JSON.stringify({
+      event:   'mark_inactive_distributori',
+      marked,
+      skipped,
+      ...(markErr && { error: markErr }),
+    }));
   }
 
   // ── Step 2: Prezzi ───────────────────────────────────────────────────────
   // Costruiamo un Set degli ID distributori validi per filtrare prezzi orfani.
-  // Il CSV prezzi può riferirsi a impianti non presenti nell'anagrafica (cessati, incoerenze MIMIT).
   const idValidi = new Set(distributori.map(d => d.id));
 
   console.log(JSON.stringify({ event: 'fetch_prezzi_start' }));
-  const prezziCsv  = await fetchCsv(MIMIT_PREZZI_URL);
+  const prezziCsv   = await fetchCsv(MIMIT_PREZZI_URL);
   const tuttiPrezzi = await parsePrezzi(prezziCsv);
   const prezzi      = tuttiPrezzi.filter(p => idValidi.has(p.id_impianto));
   console.log(JSON.stringify({
-    event: 'fetch_prezzi_done',
-    count: prezzi.length,
-    scartati: tuttiPrezzi.length - prezzi.length,
+    event:     'fetch_prezzi_done',
+    count:     prezzi.length,
+    scartati:  tuttiPrezzi.length - prezzi.length,
   }));
 
+  let p_ins = 0;
   if (!DRY_RUN) {
-    const { inserted: p_ins, errors: p_err } = await batchUpsert('prezzi_correnti', prezzi, 1000);
-    console.log(JSON.stringify({ event: 'upsert_prezzi', inserted: p_ins, errors: p_err }));
+    const { inserted, errors: p_err } = await batchUpsert('prezzi_correnti', prezzi, 1000);
+    p_ins = inserted;
+    console.log(JSON.stringify({ event: 'upsert_prezzi', inserted, errors: p_err }));
+
+    // Elimina prezzi di stazioni non più nel CSV (chiuse, non comunicanti, ecc.).
+    // Sicuro solo se abbiamo importato abbastanza righe (soglia 50.000).
+    const { deleted, skipped, error: cleanErr } = await cleanupPrezziStale(runStartedAt, p_ins);
+    console.log(JSON.stringify({
+      event:   'cleanup_prezzi_stale',
+      deleted,
+      skipped,
+      ...(cleanErr && { error: cleanErr }),
+    }));
   }
 
   const ms = Date.now() - startedAt;
-  console.log(JSON.stringify({ event: 'import_done', ms, distributori: distributori.length, prezzi: prezzi.length }));
+  console.log(JSON.stringify({
+    event:        'import_done',
+    ms,
+    distributori: distributori.length,
+    prezzi:       prezzi.length,
+  }));
 }
 
 run().catch((err) => {

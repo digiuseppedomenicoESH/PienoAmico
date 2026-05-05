@@ -14,6 +14,7 @@ class PienoAmicoApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'PienoAmico',
       theme: AppTheme.light,
+      themeMode: ThemeMode.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
