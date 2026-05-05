@@ -25,5 +25,3 @@ linter:
     sized_box_for_whitespace: true
     use_build_context_synchronously: true
 
-    # Riverpod
-    avoid_manual_providers_as_generated_provider_dependencies: false

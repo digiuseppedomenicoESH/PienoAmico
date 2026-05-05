@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:hive/hive.dart';
 
 import '../../domain/entities/distributore.dart';

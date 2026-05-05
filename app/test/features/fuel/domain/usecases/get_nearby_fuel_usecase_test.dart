@@ -20,7 +20,7 @@ class _FakeRepo implements FuelRepository {
 void main() {
   group('GetNearbyFuelUseCase', () {
     test('restituisce la lista dal repository', () async {
-      final fakeDistributore = const Distributore(
+      const fakeDistributore = Distributore(
         id: 1, nome: 'Test', bandiera: 'Eni',
         indirizzo: 'Via Test 1', comune: 'Milano',
         isAutostradale: false, latitudine: 45.46, longitudine: 9.19,

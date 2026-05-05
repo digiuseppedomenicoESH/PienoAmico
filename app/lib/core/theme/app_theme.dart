@@ -15,14 +15,14 @@ class AppTheme {
       elevation: 0,
       centerTitle: false,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: AppColors.surface,
     ),
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.background,
-      selectedColor: AppColors.primary.withOpacity(0.15),
+      selectedColor: AppColors.primary.withValues(alpha: 0.15),
       labelStyle: const TextStyle(fontSize: 13),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     ),

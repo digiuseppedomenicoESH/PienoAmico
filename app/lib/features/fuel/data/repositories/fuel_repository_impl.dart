@@ -39,7 +39,7 @@ class FuelRepositoryImpl implements FuelRepository {
       return results;
     } catch (e) {
       // 3. Se la rete fallisce e abbiamo una cache scaduta, la usiamo comunque
-      final stale = await _local.get('$key\_stale');
+      final stale = await _local.get('${key}_stale');
       if (stale != null) return stale;
       throw AppException(AppErrorType.erroreRete, dettaglio: e.toString());
     }
