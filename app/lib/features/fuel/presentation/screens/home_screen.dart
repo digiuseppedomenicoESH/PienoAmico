@@ -74,10 +74,7 @@ class HomeScreen extends ConsumerWidget {
         : AppException(AppErrorType.erroreServer, dettaglio: err.toString());
     return ErrorView(
       exception: exception,
-      onRetry: () {
-        ref.invalidate(locationProvider);
-        ref.invalidate(fuelResultsProvider);
-      },
+      onRetry: () => ref.invalidate(locationProvider),
     );
   }
 
