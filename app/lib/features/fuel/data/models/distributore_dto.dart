@@ -13,7 +13,7 @@ class DistributoreDto {
       isAutostradale:  (json['tipo_impianto'] as String?) == 'autostradale',
       latitudine:      (json['latitudine']  as num).toDouble(),
       longitudine:     (json['longitudine'] as num).toDouble(),
-      distanzaM:       json['distanza_m'] as int,
+      distanzaM:       (json['distanza_m']  as num).toInt(),
       prezzoSelf:      (json['prezzo_self']    as num?)?.toDouble(),
       prezzoServito:   (json['prezzo_servito'] as num?)?.toDouble(),
       dtAggiornamento: json['dt_aggiornamento'] != null

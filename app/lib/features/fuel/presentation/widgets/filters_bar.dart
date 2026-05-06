@@ -192,7 +192,7 @@ class _FiltersIconButton extends ConsumerWidget {
   final Filtri filtri;
   const _FiltersIconButton({required this.filtri});
 
-  bool get _hasActive => filtri.isSelf != null || filtri.soloAutostrade;
+  bool get _hasActive => filtri.isSelf != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

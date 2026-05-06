@@ -152,33 +152,6 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
             ),
           ),
 
-          // Solo autostrade
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                title: const Text(
-                  'Solo autostrade',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                value: _local.soloAutostrade,
-                onChanged: (v) =>
-                    setState(() => _local = _local.copyWith(soloAutostrade: v)),
-                dense: true,
-              ),
-            ),
-          ),
-
           const SizedBox(height: 12),
           Container(height: 1, color: AppColors.divider),
           Padding(

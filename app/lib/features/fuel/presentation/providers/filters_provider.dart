@@ -21,9 +21,6 @@ class FiltriNotifier extends Notifier<Filtri> {
   void setRaggio(int raggioMetri) =>
       state = state.copyWith(raggioMetri: raggioMetri);
 
-  void setSoloAutostrade(bool value) =>
-      state = state.copyWith(soloAutostrade: value);
-
   void applyAll(Filtri filtri) => state = filtri;
 
   void reset() => state = const Filtri();

@@ -2,26 +2,22 @@ class Filtri {
   final String carburante;
   final bool? isSelf;        // null = entrambi
   final int raggioMetri;
-  final bool soloAutostrade;
 
   const Filtri({
-    this.carburante    = 'benzina',
+    this.carburante  = 'benzina',
     this.isSelf,
-    this.raggioMetri   = 5000,
-    this.soloAutostrade = false,
+    this.raggioMetri = 5000,
   });
 
   Filtri copyWith({
     String? carburante,
     Object? isSelf = _sentinel,
     int? raggioMetri,
-    bool? soloAutostrade,
   }) {
     return Filtri(
-      carburante:     carburante     ?? this.carburante,
-      isSelf:         isSelf == _sentinel ? this.isSelf : isSelf as bool?,
-      raggioMetri:    raggioMetri    ?? this.raggioMetri,
-      soloAutostrade: soloAutostrade ?? this.soloAutostrade,
+      carburante:  carburante  ?? this.carburante,
+      isSelf:      isSelf == _sentinel ? this.isSelf : isSelf as bool?,
+      raggioMetri: raggioMetri ?? this.raggioMetri,
     );
   }
 

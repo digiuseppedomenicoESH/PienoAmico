@@ -9,8 +9,10 @@ import { parse } from 'csv-parse';
 import { Readable } from 'stream';
 
 const TIPO_MAP = {
-  'Stradale':    'stradale',
-  'Autostrada':  'autostradale',
+  'Stradale':       'stradale',
+  'Autostradale':   'autostradale',
+  'Autostrada':     'autostradale',
+  'Pompe Bianche':  'stradale',
 };
 
 /**
