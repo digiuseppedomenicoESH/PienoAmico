@@ -192,7 +192,8 @@ class _FiltersIconButton extends ConsumerWidget {
   final Filtri filtri;
   const _FiltersIconButton({required this.filtri});
 
-  bool get _hasActive => filtri.isSelf != null;
+  bool get _hasActive =>
+      filtri.carburante != 'benzina' || filtri.raggioMetri != 5000;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -28,7 +28,6 @@ class FuelRepositoryImpl implements FuelRepository {
       lon:         lon,
       raggioMetri: filtri.raggioMetri,
       carburante:  filtri.carburante,
-      isSelf:      filtri.isSelf,
     );
 
     final cached = await _local.get(key);

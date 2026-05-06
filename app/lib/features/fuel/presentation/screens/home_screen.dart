@@ -357,7 +357,6 @@ class _FilterBtn extends ConsumerWidget {
 
   bool _hasActive(Filtri f) =>
       f.carburante != 'benzina' ||
-      f.isSelf != null ||
       f.raggioMetri != 5000;
 
   @override

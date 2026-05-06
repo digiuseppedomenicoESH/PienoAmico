@@ -109,35 +109,6 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
             ),
           ),
 
-          // Modalità
-          _Section(
-            title: 'MODALITÀ',
-            child: Row(
-              children: [
-                _SheetPill(
-                  label: 'Entrambe',
-                  selected: _local.isSelf == null,
-                  onTap: () =>
-                      setState(() => _local = _local.copyWith(isSelf: null)),
-                ),
-                const SizedBox(width: 8),
-                _SheetPill(
-                  label: 'Self',
-                  selected: _local.isSelf == true,
-                  onTap: () =>
-                      setState(() => _local = _local.copyWith(isSelf: true)),
-                ),
-                const SizedBox(width: 8),
-                _SheetPill(
-                  label: 'Servito',
-                  selected: _local.isSelf == false,
-                  onTap: () =>
-                      setState(() => _local = _local.copyWith(isSelf: false)),
-                ),
-              ],
-            ),
-          ),
-
           // Raggio
           _Section(
             title: 'RAGGIO — ${(_local.raggioMetri / 1000).round()} km',

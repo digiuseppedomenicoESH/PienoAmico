@@ -12,16 +12,21 @@ class FuelLocalDatasource {
   Future<Box> get _box async => Hive.openBox(_boxName);
 
   Future<List<Distributore>?> get(String key) async {
-    final box   = await _box;
-    final entry = box.get(key) as Map?;
-    if (entry == null) return null;
+    final box = await _box;
+    try {
+      final entry = box.get(key) as Map?;
+      if (entry == null) return null;
 
-    final cachedAt = DateTime.parse(entry['cached_at'] as String);
-    if (DateTime.now().difference(cachedAt).inHours >= _ttlOre) return null;
+      final cachedAt = DateTime.parse(entry['cached_at'] as String);
+      if (DateTime.now().difference(cachedAt).inHours >= _ttlOre) return null;
 
-    return (entry['data'] as List)
-        .map((e) => DistributoreDto.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+      return (entry['data'] as List)
+          .map((e) => DistributoreDto.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (_) {
+      await box.delete(key);
+      return null;
+    }
   }
 
   Future<void> set(String key, List<Distributore> items) async {

@@ -20,7 +20,6 @@ class FuelRemoteDatasource {
       'p_lon':        lon,
       'p_raggio_m':   filtri.raggioMetri,
       'p_carburante': filtri.carburante,
-      'p_is_self':    filtri.isSelf,
       'p_limit':      30,
     });
 

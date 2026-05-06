@@ -1,7 +1,7 @@
 name: pienoamico
 description: Trova il carburante più economico vicino a te.
 publish_to: 'none'
-version: 1.0.2+3
+version: 1.0.4+5
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -36,6 +36,7 @@ dependencies:
   # Utility
   intl: ^0.19.0
   url_launcher: ^6.3.1
+  package_info_plus: ^8.1.2
 
 dev_dependencies:
   flutter_test:

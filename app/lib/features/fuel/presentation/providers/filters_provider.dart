@@ -15,9 +15,6 @@ class FiltriNotifier extends Notifier<Filtri> {
   void setCarburante(String carburante) =>
       state = state.copyWith(carburante: carburante);
 
-  void setIsSelf(bool? isSelf) =>
-      state = state.copyWith(isSelf: isSelf);
-
   void setRaggio(int raggioMetri) =>
       state = state.copyWith(raggioMetri: raggioMetri);
 
