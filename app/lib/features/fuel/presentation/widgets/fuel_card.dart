@@ -80,7 +80,6 @@ class _FuelCardState extends ConsumerState<FuelCard>
           tier: widget.tier,
           tierColor: _tierColor,
           tierBg: _tierBg,
-          index: widget.index,
           onTap: widget.onTap,
           isFavorite: isFav,
           onFavoriteTap: () =>
@@ -96,7 +95,6 @@ class _CardBody extends StatelessWidget {
   final PriceTier tier;
   final Color tierColor;
   final Color tierBg;
-  final int index;
   final VoidCallback onTap;
   final bool isFavorite;
   final VoidCallback onFavoriteTap;
@@ -106,7 +104,6 @@ class _CardBody extends StatelessWidget {
     required this.tier,
     required this.tierColor,
     required this.tierBg,
-    required this.index,
     required this.onTap,
     required this.isFavorite,
     required this.onFavoriteTap,
@@ -140,10 +137,8 @@ class _CardBody extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Rank number + cuore preferiti
+              // Cuore preferiti
               _RankColumn(
-                index: index,
-                color: tierColor,
                 isFavorite: isFavorite,
                 onFavoriteTap: onFavoriteTap,
               ),
@@ -234,48 +229,26 @@ class _CardBody extends StatelessWidget {
 }
 
 class _RankColumn extends StatelessWidget {
-  final int index;
-  final Color color;
   final bool isFavorite;
   final VoidCallback onFavoriteTap;
 
   const _RankColumn({
-    required this.index,
-    required this.color,
     required this.isFavorite,
     required this.onFavoriteTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${index + 1}',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: index == 0 ? color : AppColors.textDisabled,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          GestureDetector(
-            onTap: onFavoriteTap,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                size: 14,
-                color: isFavorite ? AppColors.primary : AppColors.textDisabled,
-              ),
-            ),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onFavoriteTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+        child: Icon(
+          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          size: 24,
+          color: isFavorite ? AppColors.prezzoHigh : AppColors.textDisabled,
+        ),
       ),
     );
   }

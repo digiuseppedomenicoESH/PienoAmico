@@ -2,10 +2,10 @@ name: Aggiornamento Prezzi Carburante
 
 on:
   schedule:
-    # 07:30 UTC = 08:30 ora italiana (CET) / 09:30 (CEST estate)
-    - cron: '30 6 * * *'
+    # 08:30 UTC = 09:30 ora italiana (CET) / 10:30 (CEST estate) — dopo pubblicazione MIMIT
+    - cron: '30 8 * * *'
     # 13:30 UTC = 14:30 ora italiana
-    - cron: '30 12 * * *'
+    - cron: '30 13 * * *'
   # Esecuzione manuale da GitHub UI (utile per debug e primo setup)
   workflow_dispatch:
 

@@ -1,9 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/filtri.dart';
+import '../../../onboarding/data/onboarding_repository.dart';
 
 class FiltriNotifier extends Notifier<Filtri> {
   @override
-  Filtri build() => const Filtri();
+  Filtri build() {
+    final saved = OnboardingRepository.getCarburantePreferito();
+    if (saved != null && Filtri.carburantiDisponibili.contains(saved)) {
+      return Filtri(carburante: saved);
+    }
+    return const Filtri();
+  }
 
   void setCarburante(String carburante) =>
       state = state.copyWith(carburante: carburante);

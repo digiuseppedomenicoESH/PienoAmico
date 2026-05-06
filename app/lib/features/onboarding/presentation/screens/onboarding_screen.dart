@@ -17,8 +17,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _ctrl = PageController();
   int _page = 0;
   bool _gpsLoading = false;
+  String? _carburanteSelezionato;
 
-  static const _totalPages = 3;
+  static const _totalPages = 4;
+
+  bool get _canProceed {
+    // pagina carburante (index 2): obbligatorio scegliere
+    if (_page == 2) return _carburanteSelezionato != null;
+    return true;
+  }
 
   void _next() {
     if (_page < _totalPages - 1) {
@@ -30,6 +37,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _complete() async {
+    if (_carburanteSelezionato != null) {
+      await OnboardingRepository.saveCarburantePreferito(_carburanteSelezionato!);
+    }
     await OnboardingRepository.markCompleted();
     if (mounted) {
       ref.read(onboardingCompletedProvider.notifier).state = true;
@@ -87,10 +97,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: PageView(
                 controller: _ctrl,
                 onPageChanged: (i) => setState(() => _page = i),
-                children: const [
-                  _PageBenvenuto(),
-                  _PageComeFunziona(),
-                  _PageGps(),
+                children: [
+                  const _PageBenvenuto(),
+                  const _PageComeFunziona(),
+                  _PageCarburante(
+                    selezionato: _carburanteSelezionato,
+                    onSelected: (c) =>
+                        setState(() => _carburanteSelezionato = c),
+                  ),
+                  const _PageGps(),
                 ],
               ),
             ),
@@ -105,7 +120,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   _page < _totalPages - 1
                       ? _PrimaryButton(
                           label: 'Avanti',
-                          onTap: _next,
+                          onTap: _canProceed ? _next : null,
                         )
                       : _PrimaryButton(
                           label: _gpsLoading ? 'Attendere…' : 'Consenti posizione',
@@ -177,7 +192,7 @@ class _PageComeFunziona extends StatelessWidget {
   Widget build(BuildContext context) {
     return _PageLayout(
       illustration: _IllustrationCircle(
-        color: AppColors.prezzoTop,
+        color: AppColors.primary,
         icon: Icons.search_rounded,
         iconColor: Colors.white,
       ),
@@ -214,7 +229,121 @@ class _PageComeFunziona extends StatelessWidget {
   }
 }
 
-// ── Pagina 3 — GPS ────────────────────────────────────────────────────────────
+// ── Pagina 3 — Carburante ────────────────────────────────────────────────────
+
+class _PageCarburante extends StatelessWidget {
+  final String? selezionato;
+  final ValueChanged<String> onSelected;
+
+  const _PageCarburante({
+    required this.selezionato,
+    required this.onSelected,
+  });
+
+  static const _carburanti = [
+    ('benzina', 'Benzina', Icons.local_gas_station_rounded),
+    ('gasolio', 'Gasolio', Icons.oil_barrel_rounded),
+    ('gpl', 'GPL', Icons.propane_rounded),
+    ('metano', 'Metano', Icons.air_rounded),
+    ('hvo', 'HVO', Icons.eco_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _PageLayout(
+      illustration: _IllustrationCircle(
+        color: AppColors.primary,
+        icon: Icons.directions_car_rounded,
+        iconColor: Colors.white,
+      ),
+      title: 'Il tuo carburante',
+      subtitle: 'Scegli il carburante del tuo veicolo.\nSarà il filtro predefinito nella ricerca.',
+      extra: Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: Column(
+          children: _carburanti.map((item) {
+            final (id, label, icon) = item;
+            final selected = selezionato == id;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _CarburanteCard(
+                label: label,
+                icon: icon,
+                selected: selected,
+                onTap: () => onSelected(id),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+class _CarburanteCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CarburanteCard({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryMuted : AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? AppColors.primary : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            AnimatedOpacity(
+              opacity: selected ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 180),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Pagina 4 — GPS ────────────────────────────────────────────────────────────
 
 class _PageGps extends StatelessWidget {
   const _PageGps();
@@ -454,7 +583,7 @@ class _PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? icon;
   final bool loading;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _PrimaryButton({
     required this.label,

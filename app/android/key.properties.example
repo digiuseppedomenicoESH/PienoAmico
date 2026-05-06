@@ -1,0 +1,4 @@
+storePassword=LA_TUA_PASSWORD_KEYSTORE
+keyPassword=LA_TUA_PASSWORD_KEY
+keyAlias=pienoamico
+storeFile=../pienoamico-release.jks

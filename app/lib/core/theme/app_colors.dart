@@ -14,10 +14,11 @@ class AppColors {
   static const surface         = Color(0xFFF1F3F8);
   static const surfaceHover    = Color(0xFFE8EBF3);
 
-  // ── Brand arancio (carburante, energia) ──────────────────
-  static const primary         = Color(0xFFFF6600);
-  static const primaryMuted    = Color(0x1AFF6600); // ~10% opacity
-  static const primaryLight    = Color(0xFFFF8533);
+  // ── Brand verde (colori logo PienoAmico) ─────────────────
+  static const primary         = Color(0xFF35750B); // verde AMICO
+  static const primaryMuted    = Color(0x1A35750B); // ~10% opacity
+  static const primaryLight    = Color(0xFF66AC15); // verde foglia brillante
+  static const brandBlue       = Color(0xFF1FB2FD); // blu PIENO (secondario)
 
   // ── Prezzi ───────────────────────────────────────────────
   static const prezzoTop       = Color(0xFF00A878); // Verde — prezzo più basso

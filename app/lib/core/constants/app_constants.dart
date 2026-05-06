@@ -13,9 +13,8 @@ class AppConstants {
   static const cacheTtlOre   = 4;
   static const prezziStaleOre = 48;
 
-  // AdMob — sostituire con ID reali prima della release
-  static const admobBannerAdUnitId       = 'ca-app-pub-3940256099942544/6300978111';
-  static const admobInterstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
+  static const admobBannerAdUnitId       = 'ca-app-pub-9139935695451710/8604978437';
+  static const admobInterstitialAdUnitId = 'ca-app-pub-9139935695451710/6424253794';
   static const interstitialMinIntervalMinuti = 10;
   static const interstitialMaxOgniNTap       = 4;
 }
