@@ -1,20 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pienoamico/features/fuel/domain/entities/distributore.dart';
 import 'package:pienoamico/features/fuel/domain/entities/filtri.dart';
+import 'package:pienoamico/features/fuel/domain/entities/fuel_results.dart';
 import 'package:pienoamico/features/fuel/domain/repositories/fuel_repository.dart';
 import 'package:pienoamico/features/fuel/domain/usecases/get_nearby_fuel_usecase.dart';
 
-// Stub minimale del repository — nessun mock framework richiesto
 class _FakeRepo implements FuelRepository {
   final List<Distributore> _fakeResults;
   _FakeRepo(this._fakeResults);
 
   @override
-  Future<List<Distributore>> getNearbyFuel({
+  Future<FuelResults> getNearbyFuel({
     required double lat,
     required double lon,
     required Filtri filtri,
-  }) async => _fakeResults;
+  }) async => FuelResults(items: _fakeResults, fetchedAt: DateTime.now());
 }
 
 void main() {
@@ -32,8 +32,8 @@ void main() {
         lat: 45.46, lon: 9.19, filtri: const Filtri(),
       );
 
-      expect(result, hasLength(1));
-      expect(result.first.id, 1);
+      expect(result.items, hasLength(1));
+      expect(result.items.first.id, 1);
     });
 
     test('assert fallisce se raggio > 20000m', () {

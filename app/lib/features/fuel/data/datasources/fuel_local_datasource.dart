@@ -1,28 +1,29 @@
 import 'package:hive/hive.dart';
 
 import '../../domain/entities/distributore.dart';
+import '../../domain/entities/fuel_results.dart';
 import '../models/distributore_dto.dart';
 
-// Responsabile della cache locale Hive. TTL: 4 ore.
-// Chiave: stringa generata da CacheKeyBuilder.
 class FuelLocalDatasource {
   static const _boxName = 'fuel_cache';
-  static const _ttlOre  = 4;
+  static const _ttl = Duration(minutes: 90);
 
   Future<Box> get _box async => Hive.openBox(_boxName);
 
-  Future<List<Distributore>?> get(String key) async {
+  Future<FuelResults?> get(String key) async {
     final box = await _box;
     try {
       final entry = box.get(key) as Map?;
       if (entry == null) return null;
 
       final cachedAt = DateTime.parse(entry['cached_at'] as String);
-      if (DateTime.now().difference(cachedAt).inHours >= _ttlOre) return null;
+      if (DateTime.now().difference(cachedAt) >= _ttl) return null;
 
-      return (entry['data'] as List)
+      final items = (entry['data'] as List)
           .map((e) => DistributoreDto.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
+
+      return FuelResults(items: items, fetchedAt: cachedAt);
     } catch (_) {
       await box.delete(key);
       return null;
@@ -37,7 +38,11 @@ class FuelLocalDatasource {
     });
   }
 
-  // Serializzazione minimale per Hive (no code generation richiesta)
+  Future<void> delete(String key) async {
+    final box = await _box;
+    await box.delete(key);
+  }
+
   Map<String, dynamic> _toJson(Distributore d) => {
     'id':              d.id,
     'nome':            d.nome,

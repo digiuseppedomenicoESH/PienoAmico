@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/fuel_local_datasource.dart';
 import '../../data/datasources/fuel_remote_datasource.dart';
 import '../../data/repositories/fuel_repository_impl.dart';
-import '../../domain/entities/distributore.dart';
+import '../../domain/entities/fuel_results.dart';
 import '../../domain/entities/prezzo_record.dart';
 import '../../domain/usecases/get_nearby_fuel_usecase.dart';
 import 'filters_provider.dart';
@@ -22,7 +22,7 @@ final _useCaseProvider = Provider(
   (ref) => GetNearbyFuelUseCase(ref.read(_repoProvider)),
 );
 
-final fuelResultsProvider = FutureProvider<List<Distributore>>((ref) async {
+final fuelResultsProvider = FutureProvider<FuelResults>((ref) async {
   final position = await ref.watch(locationProvider.future);
   final filtri   = ref.watch(filtriProvider);
 

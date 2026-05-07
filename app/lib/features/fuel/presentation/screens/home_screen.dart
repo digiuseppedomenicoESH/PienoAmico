@@ -58,8 +58,8 @@ class HomeScreen extends ConsumerWidget {
                   const LoadingView(message: 'Ricerca distributori...'),
               error: (err, _) => _buildError(err, ref),
               data: (results) => viewMode == ViewMode.list
-                  ? _buildList(context, ref, results)
-                  : _buildMap(ref, results),
+                  ? _buildList(context, ref, results.items, results.fetchedAt)
+                  : _buildMap(ref, results.items),
             ),
           ),
           const _BannerAdWidget(),
@@ -82,6 +82,7 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     List<Distributore> results,
+    DateTime fetchedAt,
   ) {
     final favIds = ref.watch(favoritesProvider);
     final showFavorites = ref.watch(showFavoritesProvider);
@@ -107,7 +108,9 @@ class HomeScreen extends ConsumerWidget {
       backgroundColor: AppColors.backgroundCard,
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _ListHeader(count: results.length)),
+          SliverToBoxAdapter(
+            child: _ListHeader(count: results.length, fetchedAt: fetchedAt),
+          ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             sliver: SliverList.separated(
@@ -325,7 +328,16 @@ class _ToggleBtn extends StatelessWidget {
 
 class _ListHeader extends StatelessWidget {
   final int count;
-  const _ListHeader({required this.count});
+  final DateTime fetchedAt;
+  const _ListHeader({required this.count, required this.fetchedAt});
+
+  String _formatAge() {
+    final diff = DateTime.now().difference(fetchedAt);
+    if (diff.inMinutes < 1) return 'aggiornato ora';
+    if (diff.inMinutes < 60) return 'aggiornato ${diff.inMinutes} min fa';
+    final h = diff.inHours;
+    return 'aggiornato ${h}h fa';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -342,6 +354,15 @@ class _ListHeader extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
               letterSpacing: 0.1,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '· ${_formatAge()}',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
             ),
           ),
         ],

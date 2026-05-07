@@ -1,15 +1,13 @@
-import '../entities/distributore.dart';
 import '../entities/filtri.dart';
+import '../entities/fuel_results.dart';
 import '../repositories/fuel_repository.dart';
 
-// Use case: unico punto d'ingresso per la logica "trova carburante vicino".
-// Aggiunge validazione di dominio che non appartiene né al repository né alla UI.
 class GetNearbyFuelUseCase {
   final FuelRepository _repository;
 
   const GetNearbyFuelUseCase(this._repository);
 
-  Future<List<Distributore>> call({
+  Future<FuelResults> call({
     required double lat,
     required double lon,
     required Filtri filtri,

@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-import '../../domain/entities/distributore.dart';
 import '../../domain/entities/filtri.dart';
+import '../../domain/entities/fuel_results.dart';
 import '../../domain/repositories/fuel_repository.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/cache_key_builder.dart';
@@ -18,7 +18,7 @@ class FuelRepositoryImpl implements FuelRepository {
   const FuelRepositoryImpl(this._remote, this._local);
 
   @override
-  Future<List<Distributore>> getNearbyFuel({
+  Future<FuelResults> getNearbyFuel({
     required double lat,
     required double lon,
     required Filtri filtri,
@@ -34,11 +34,11 @@ class FuelRepositoryImpl implements FuelRepository {
     if (cached != null) return cached;
 
     try {
-      final results = await _remote.getNearbyFuel(lat: lat, lon: lon, filtri: filtri);
-      if (results.isNotEmpty) {
-        await _local.set(key, results);
+      final items = await _remote.getNearbyFuel(lat: lat, lon: lon, filtri: filtri);
+      if (items.isNotEmpty) {
+        await _local.set(key, items);
       }
-      return results;
+      return FuelResults(items: items, fetchedAt: DateTime.now());
     } catch (e, st) {
       debugPrint('[FuelRepository] getNearbyFuel failed: $e\n$st');
 
