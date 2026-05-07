@@ -35,7 +35,9 @@ class FuelRepositoryImpl implements FuelRepository {
 
     try {
       final results = await _remote.getNearbyFuel(lat: lat, lon: lon, filtri: filtri);
-      await _local.set(key, results);
+      if (results.isNotEmpty) {
+        await _local.set(key, results);
+      }
       return results;
     } catch (e, st) {
       debugPrint('[FuelRepository] getNearbyFuel failed: $e\n$st');

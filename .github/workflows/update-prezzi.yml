@@ -6,6 +6,11 @@ on:
     - cron: '30 8 * * *'
     # 13:30 UTC = 14:30 ora italiana
     - cron: '30 13 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/update-prezzi.yml'
   # Esecuzione manuale da GitHub UI (utile per debug e primo setup)
   workflow_dispatch:
 
