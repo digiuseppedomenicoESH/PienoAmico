@@ -29,7 +29,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fuelAsync = ref.watch(fuelResultsProvider);
     final viewMode = ref.watch(viewModeProvider);
     final activeTab = ref.watch(activeTabProvider);
     final isViaggio = activeTab == AppTab.viaggio;
@@ -66,31 +65,45 @@ class HomeScreen extends ConsumerWidget {
       body: Column(
         children: [
           Expanded(
-            child: isViaggio
-                ? const TripScreen()
-                : fuelAsync.when(
-                    loading: () =>
-                        const LoadingView(message: 'Ricerca distributori...'),
-                    error: (err, _) => _buildError(err, ref),
-                    data: (results) => viewMode == ViewMode.list
-                        ? _buildList(
-                            context, ref, results.items, results.fetchedAt)
-                        : _buildMap(ref, results.items),
-                  ),
+            child: IndexedStack(
+              index: activeTab == AppTab.viaggio ? 1 : 0,
+              children: const [
+                _NearbyTab(),
+                TripScreen(),
+              ],
+            ),
           ),
           const _BannerAdWidget(),
         ],
       ),
     );
   }
+}
 
-  Widget _buildError(Object err, WidgetRef ref) {
-    final exception = err is AppException
-        ? err
-        : AppException(AppErrorType.erroreServer, dettaglio: err.toString());
-    return ErrorView(
-      exception: exception,
-      onRetry: () => ref.invalidate(locationProvider),
+// ── Tab "Vicino a me" ────────────────────────────────────────
+
+class _NearbyTab extends ConsumerWidget {
+  const _NearbyTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fuelAsync = ref.watch(fuelResultsProvider);
+    final viewMode = ref.watch(viewModeProvider);
+
+    return fuelAsync.when(
+      loading: () => const LoadingView(message: 'Ricerca distributori...'),
+      error: (err, _) {
+        final exception = err is AppException
+            ? err
+            : AppException(AppErrorType.erroreServer, dettaglio: err.toString());
+        return ErrorView(
+          exception: exception,
+          onRetry: () => ref.invalidate(locationProvider),
+        );
+      },
+      data: (results) => viewMode == ViewMode.list
+          ? _buildList(context, ref, results.items, results.fetchedAt)
+          : _buildMap(ref, results.items),
     );
   }
 

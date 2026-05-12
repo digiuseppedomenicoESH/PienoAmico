@@ -14,6 +14,7 @@ class DistributoreDto {
       latitudine:      (json['latitudine']  as num).toDouble(),
       longitudine:     (json['longitudine'] as num).toDouble(),
       distanzaM:       (json['distanza_m']  as num).toInt(),
+      deviazioneM:     (json['deviazione_m'] as num?)?.toInt(),
       prezzoSelf:      (json['prezzo_self']    as num?)?.toDouble(),
       prezzoServito:   (json['prezzo_servito'] as num?)?.toDouble(),
       dtAggiornamento: json['dt_aggiornamento'] != null

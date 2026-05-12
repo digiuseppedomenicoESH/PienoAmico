@@ -9,7 +9,6 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../fuel/domain/entities/distributore.dart';
 import '../../../fuel/presentation/widgets/price_badge.dart' show PriceTier;
 import '../../../location/presentation/providers/location_provider.dart';
-import '../../data/repositories/trip_repository.dart';
 import '../../domain/entities/trip_result.dart';
 import '../../domain/entities/trip_suggestion.dart';
 import '../providers/trip_provider.dart';
@@ -80,6 +79,8 @@ class _TripScreenState extends ConsumerState<TripScreen> {
     );
   }
 }
+
+// ── Vista preferiti nel tab viaggio ─────────────────────────
 
 // ── Barra di ricerca ─────────────────────────────────────────
 
@@ -405,14 +406,21 @@ class _TripResult extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locationAsync = ref.watch(locationProvider);
-    final mid = TripRepository.midpoint(result.routePoints);
     final tiers = _computeTiers(result.stations);
     final bestIdx = _bestPriceIndex(result.stations);
+    final onRoute = result.stations
+        .map((d) => (d.deviazioneM ?? 9999) <= 300)
+        .toList();
 
     return Stack(
       children: [
         FlutterMap(
-          options: MapOptions(initialCenter: mid, initialZoom: 7),
+          options: MapOptions(
+            initialCameraFit: CameraFit.bounds(
+              bounds: LatLngBounds.fromPoints(result.routePoints),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 280),
+            ),
+          ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -459,14 +467,17 @@ class _TripResult extends ConsumerWidget {
                   .map(
                     (e) => Marker(
                       point: LatLng(e.value.latitudine, e.value.longitudine),
-                      width: 28,
-                      height: 28,
+                      width: 36,
+                      height: 36,
                       child: GestureDetector(
                         onTap: () => context.push(
                           '/detail/${e.value.id}',
                           extra: e.value,
                         ),
-                        child: _StationMarker(tier: tiers[e.key]),
+                        child: _StationMarker(
+                          tier: tiers[e.key],
+                          isOnRoute: onRoute[e.key],
+                        ),
                       ),
                     ),
                   )
@@ -541,6 +552,7 @@ class _TripResult extends ConsumerWidget {
                               rank: i + 1,
                               tier: tiers[i],
                               isBestPrice: i == bestIdx,
+                              isOnRoute: onRoute[i],
                               onTap: () => ctx.push(
                                 '/detail/${result.stations[i].id}',
                                 extra: result.stations[i],
@@ -556,13 +568,17 @@ class _TripResult extends ConsumerWidget {
       ],
     );
   }
+
 }
 
 // ── Marker sulla mappa ───────────────────────────────────────
 
 class _StationMarker extends StatelessWidget {
   final PriceTier tier;
-  const _StationMarker({required this.tier});
+  final bool isOnRoute;
+  const _StationMarker({required this.tier, required this.isOnRoute});
+
+  static const _kAmber = Color(0xFFF59E0B);
 
   Color get _color => switch (tier) {
         PriceTier.best => AppColors.prezzoTop,
@@ -572,22 +588,44 @@ class _StationMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        color: _color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: _color.withValues(alpha: 0.4),
-            blurRadius: 4,
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: _color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: _color.withValues(alpha: 0.4),
+                blurRadius: 4,
+              ),
+            ],
           ),
-        ],
-      ),
-      child: const Icon(Icons.local_gas_station_rounded,
-          size: 13, color: Colors.white),
+          child: const Icon(Icons.local_gas_station_rounded,
+              size: 13, color: Colors.white),
+        ),
+        if (!isOnRoute)
+          Positioned(
+            right: -1,
+            bottom: -1,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: _kAmber,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: const Icon(Icons.turn_right_rounded,
+                  size: 8, color: Colors.white),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -599,6 +637,7 @@ class _TripStationCard extends StatelessWidget {
   final int rank;
   final PriceTier tier;
   final bool isBestPrice;
+  final bool isOnRoute;
   final VoidCallback onTap;
 
   const _TripStationCard({
@@ -606,6 +645,7 @@ class _TripStationCard extends StatelessWidget {
     required this.rank,
     required this.tier,
     required this.isBestPrice,
+    required this.isOnRoute,
     required this.onTap,
   });
 
@@ -621,11 +661,17 @@ class _TripStationCard extends StatelessWidget {
         PriceTier.high => AppColors.prezzoHighBg,
       };
 
-  // distanzaM = km dal punto di partenza lungo il percorso
   String get _kmDaPartenza {
     final m = distributore.distanzaM;
     if (m < 1000) return 'a ${m}m dalla partenza';
     return 'a ${(m / 1000).toStringAsFixed(0)}km dalla partenza';
+  }
+
+  String? get _deviazioneLabel {
+    final dev = distributore.deviazioneM;
+    if (dev == null || dev <= 300) return null;
+    if (dev < 1000) return '${dev}m dal percorso';
+    return '${(dev / 1000).toStringAsFixed(1)}km dal percorso';
   }
 
   @override
@@ -700,19 +746,43 @@ class _TripStationCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (isOnRoute) ...[
+                            const SizedBox(width: 6),
+                            const _Pill(
+                              label: 'SUL PERCORSO',
+                              color: AppColors.primary,
+                            ),
+                          ],
                           if (d.isAutostradale) ...[
                             const SizedBox(width: 6),
-                            _Pill(label: 'A', color: AppColors.prezzoMid),
+                            const _Pill(label: 'A', color: AppColors.prezzoMid),
                           ],
                           if (isBestPrice) ...[
                             const SizedBox(width: 6),
-                            _Pill(
+                            const _Pill(
                               label: 'MIGLIOR PREZZO',
                               color: AppColors.prezzoTop,
                             ),
                           ],
                         ],
                       ),
+                      if (_deviazioneLabel != null) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(Icons.alt_route_rounded,
+                                size: 11,
+                                color: Color(0xFFF59E0B)),
+                            const SizedBox(width: 3),
+                            Text(
+                              _deviazioneLabel!,
+                              style: AppTextStyles.distanza.copyWith(
+                                color: const Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

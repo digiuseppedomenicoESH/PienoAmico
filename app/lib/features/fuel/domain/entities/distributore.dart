@@ -10,6 +10,7 @@ class Distributore {
   final double latitudine;
   final double longitudine;
   final int distanzaM;
+  final int? deviazioneM;
   final double? prezzoSelf;
   final double? prezzoServito;
   final DateTime? dtAggiornamento;
@@ -24,6 +25,7 @@ class Distributore {
     required this.latitudine,
     required this.longitudine,
     required this.distanzaM,
+    this.deviazioneM,
     this.prezzoSelf,
     this.prezzoServito,
     this.dtAggiornamento,

@@ -1,4 +1,3 @@
-import 'package:latlong2/latlong.dart';
 import '../../domain/entities/trip_result.dart';
 import '../../domain/entities/trip_suggestion.dart';
 import '../datasources/trip_remote_datasource.dart';
@@ -44,11 +43,5 @@ class TripRepository {
     );
 
     return TripResult(routePoints: routePoints, stations: stations);
-  }
-
-  // Punto centrale della polyline — usato per centrare la mappa
-  static LatLng midpoint(List<LatLng> points) {
-    if (points.isEmpty) return const LatLng(41.9, 12.5); // Roma fallback
-    return points[points.length ~/ 2];
   }
 }
