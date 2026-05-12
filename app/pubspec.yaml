@@ -1,7 +1,7 @@
 name: pienoamico
 description: Trova il carburante più economico vicino a te.
 publish_to: 'none'
-version: 1.1.0+9
+version: 1.2.0+10
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
