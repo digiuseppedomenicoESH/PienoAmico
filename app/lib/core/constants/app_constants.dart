@@ -3,6 +3,9 @@ class AppConstants {
   static const supabaseUrl     = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
+  // Google Maps Platform — iniettato via --dart-define al build
+  static const googleMapsApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
+
   // Ricerca
   static const defaultRaggioMetri = 5000;
   static const maxRaggioMetri     = 20000;

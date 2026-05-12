@@ -1,7 +1,7 @@
 name: pienoamico
 description: Trova il carburante più economico vicino a te.
 publish_to: 'none'
-version: 1.0.6+8
+version: 1.1.0+9
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -32,6 +32,9 @@ dependencies:
 
   # Pubblicità
   google_mobile_ads: ^5.1.0
+
+  # HTTP client (Places API, Routes API)
+  http: ^1.2.2
 
   # Utility
   intl: ^0.19.0

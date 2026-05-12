@@ -22,6 +22,7 @@ import '../../../../shared/widgets/app_logo.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../trip/presentation/screens/trip_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final fuelAsync = ref.watch(fuelResultsProvider);
     final viewMode = ref.watch(viewModeProvider);
+    final activeTab = ref.watch(activeTabProvider);
+    final isViaggio = activeTab == AppTab.viaggio;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,29 +41,42 @@ class HomeScreen extends ConsumerWidget {
         titleSpacing: 16,
         title: const AppLogo(),
         actions: [
-          _ViewToggle(current: viewMode),
-          const SizedBox(width: 4),
+          if (!isViaggio) ...[
+            _ViewToggle(current: viewMode),
+            const SizedBox(width: 4),
+          ],
           const _FilterBtn(),
           const SizedBox(width: 4),
-          const _FavoritesToggleBtn(),
-          const SizedBox(width: 4),
+          if (!isViaggio) ...[
+            const _FavoritesToggleBtn(),
+            const SizedBox(width: 4),
+          ],
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.divider),
+          preferredSize: const Size.fromHeight(48 + 1),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _AppTabSelector(),
+              Container(height: 1, color: AppColors.divider),
+            ],
+          ),
         ),
       ),
       body: Column(
         children: [
           Expanded(
-            child: fuelAsync.when(
-              loading: () =>
-                  const LoadingView(message: 'Ricerca distributori...'),
-              error: (err, _) => _buildError(err, ref),
-              data: (results) => viewMode == ViewMode.list
-                  ? _buildList(context, ref, results.items, results.fetchedAt)
-                  : _buildMap(ref, results.items),
-            ),
+            child: isViaggio
+                ? const TripScreen()
+                : fuelAsync.when(
+                    loading: () =>
+                        const LoadingView(message: 'Ricerca distributori...'),
+                    error: (err, _) => _buildError(err, ref),
+                    data: (results) => viewMode == ViewMode.list
+                        ? _buildList(
+                            context, ref, results.items, results.fetchedAt)
+                        : _buildMap(ref, results.items),
+                  ),
           ),
           const _BannerAdWidget(),
         ],
@@ -436,6 +452,93 @@ class _FavoritesToggleBtn extends ConsumerWidget {
         onPressed: () =>
             ref.read(showFavoritesProvider.notifier).state = !showFavorites,
         tooltip: showFavorites ? 'Cerca distributori' : 'Preferiti',
+      ),
+    );
+  }
+}
+
+// ── Tab selector Vicino / Viaggio ────────────────────────────
+
+class _AppTabSelector extends ConsumerWidget {
+  const _AppTabSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(activeTabProvider);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+      child: Row(
+        children: [
+          _Tab(
+            label: 'Vicino a me',
+            icon: Icons.near_me_rounded,
+            selected: active == AppTab.vicino,
+            onTap: () {
+              ref.read(activeTabProvider.notifier).state = AppTab.vicino;
+            },
+          ),
+          const SizedBox(width: 8),
+          _Tab(
+            label: 'Pianifica viaggio',
+            icon: Icons.route_rounded,
+            selected: active == AppTab.viaggio,
+            onTap: () {
+              ref.read(activeTabProvider.notifier).state = AppTab.viaggio;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _Tab({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: selected ? Colors.white : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textSecondary,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
