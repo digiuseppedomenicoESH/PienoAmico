@@ -20,7 +20,27 @@ const CARBURANTE_MAP = {
 };
 
 /**
- * Converte "GG/MM/AAAA HH:MM:SS" in ISO 8601 UTC.
+ * Restituisce true se la data cade nel periodo CEST (ora legale italiana, UTC+2).
+ * L'ora legale in Europa inizia l'ultima domenica di marzo e finisce l'ultima domenica di ottobre.
+ * @param {number} year
+ * @param {number} month  - 1-based
+ * @param {number} day
+ * @returns {boolean}
+ */
+function isCEST(year, month, day) {
+  if (month < 3 || month > 10) return false;
+  if (month > 3 && month < 10) return true;
+
+  // Calcola l'ultima domenica di marzo/ottobre
+  const lastDay = new Date(Date.UTC(year, month - 1 + 1, 0)).getUTCDate(); // ultimo giorno del mese
+  let lastSunday = lastDay;
+  while (new Date(Date.UTC(year, month - 1, lastSunday)).getUTCDay() !== 0) lastSunday--;
+
+  return month === 3 ? day >= lastSunday : day < lastSunday;
+}
+
+/**
+ * Converte "GG/MM/AAAA HH:MM:SS" in ISO 8601 con offset corretto (CET/CEST).
  * @param {string} dtComu
  * @returns {string|null}
  */
@@ -30,9 +50,9 @@ function parseDtComu(dtComu) {
   const match = dtComu.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
   if (!match) return null;
   const [, gg, mm, aaaa, hh, min, ss] = match;
-  // I gestori comunicano in ora italiana — trattare come Europe/Rome
-  // Per semplicità nella v1 usiamo il timestamp così com'è (differenza di 1-2h irrilevante)
-  return `${aaaa}-${mm}-${gg}T${hh}:${min}:${ss}+01:00`;
+  // Usa +02:00 (CEST) in ora legale, +01:00 (CET) in ora solare
+  const offset = isCEST(parseInt(aaaa, 10), parseInt(mm, 10), parseInt(gg, 10)) ? '+02:00' : '+01:00';
+  return `${aaaa}-${mm}-${gg}T${hh}:${min}:${ss}${offset}`;
 }
 
 /**

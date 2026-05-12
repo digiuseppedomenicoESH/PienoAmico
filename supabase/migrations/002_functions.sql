@@ -52,35 +52,35 @@ AS $$
         ST_X(d.posizione::geometry)::FLOAT                                              AS longitudine,
         ST_Distance(d.posizione, ST_MakePoint(p_lon, p_lat)::GEOGRAPHY)::INTEGER        AS distanza_m,
 
-        -- Prezzo self-service più recente (NULL se non disponibile o stale)
+        -- Prezzo self-service: nessun filtro su dt_comunicazione perché il gestore
+        -- comunica solo quando cambia il prezzo (può restare invariato per settimane).
+        -- La garanzia di freschezza è updated_at: se la riga è in prezzi_correnti,
+        -- era presente nell'ultimo CSV MIMIT importato.
         (
             SELECT p.prezzo
             FROM prezzi_correnti p
             WHERE p.id_impianto = d.id
               AND p.carburante  = p_carburante::carburante_enum
               AND p.is_self     = true
-              AND p.dt_comunicazione > now() - INTERVAL '48 hours'
             LIMIT 1
         ) AS prezzo_self,
 
-        -- Prezzo servito più recente (NULL se non disponibile o stale)
+        -- Prezzo servito
         (
             SELECT p.prezzo
             FROM prezzi_correnti p
             WHERE p.id_impianto = d.id
               AND p.carburante  = p_carburante::carburante_enum
               AND p.is_self     = false
-              AND p.dt_comunicazione > now() - INTERVAL '48 hours'
             LIMIT 1
         ) AS prezzo_servito,
 
-        -- Timestamp dell'aggiornamento più recente per questo carburante
+        -- Data in cui il gestore ha comunicato l'ultimo aggiornamento di prezzo
         (
             SELECT MAX(p.dt_comunicazione)
             FROM prezzi_correnti p
             WHERE p.id_impianto = d.id
               AND p.carburante  = p_carburante::carburante_enum
-              AND p.dt_comunicazione > now() - INTERVAL '48 hours'
         ) AS dt_aggiornamento
 
     FROM distributori d
@@ -91,26 +91,24 @@ AS $$
             ST_MakePoint(p_lon, p_lat)::GEOGRAPHY,
             p_raggio_m
         )
-        -- Includi solo impianti con almeno un prezzo recente per questo carburante
-        -- Questa condizione EXISTS viene valutata DOPO il filtro spaziale (molto efficiente)
+        -- Includi solo impianti che hanno almeno un prezzo per questo carburante.
+        -- La pulizia dei prezzi obsoleti è delegata a cleanupPrezziStale nello script
+        -- di import, che rimuove le righe non presenti nell'ultimo CSV MIMIT.
         AND EXISTS (
             SELECT 1
             FROM prezzi_correnti p
             WHERE p.id_impianto = d.id
               AND p.carburante  = p_carburante::carburante_enum
-              AND p.dt_comunicazione > now() - INTERVAL '48 hours'
               AND (p_is_self IS NULL OR p.is_self = p_is_self)
         )
 
     ORDER BY
-        -- Ordina per prezzo minimo disponibile, poi distanza come tiebreaker
         COALESCE(
             (
                 SELECT MIN(p.prezzo)
                 FROM prezzi_correnti p
                 WHERE p.id_impianto = d.id
                   AND p.carburante  = p_carburante::carburante_enum
-                  AND p.dt_comunicazione > now() - INTERVAL '48 hours'
                   AND (p_is_self IS NULL OR p.is_self = p_is_self)
             ),
             9999
