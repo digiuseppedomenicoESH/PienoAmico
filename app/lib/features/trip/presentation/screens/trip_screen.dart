@@ -70,9 +70,9 @@ class _TripScreenState extends ConsumerState<TripScreen> {
               ? const _EmptyState()
               : tripAsync.when(
                   loading: () => const _LoadingState(),
-                  error: (_, __) => const _ErrorState(),
+                  error: (err, __) => _ErrorState(message: err.toString()),
                   data: (result) => result == null
-                      ? const _ErrorState()
+                      ? const _ErrorState(message: null)
                       : _TripResult(result: result),
                 ),
         ),
@@ -180,7 +180,19 @@ class _SuggestionsDropdown extends ConsumerWidget {
           ),
         ),
       ),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (err, __) => Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.prezzoHighBg,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.prezzoHigh.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              err.toString(),
+              style: const TextStyle(fontSize: 11, color: AppColors.prezzoHigh),
+            ),
+          ),
       data: (suggestions) {
         if (suggestions.isEmpty) return const SizedBox.shrink();
         return Container(
@@ -249,26 +261,30 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.route_rounded, size: 56, color: AppColors.primary.withValues(alpha: 0.25)),
-          const SizedBox(height: 16),
-          const Text(
-            'Inserisci la destinazione',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.route_rounded, size: 48, color: AppColors.primary.withValues(alpha: 0.25)),
+            const SizedBox(height: 12),
+            const Text(
+              'Inserisci la destinazione',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Ti mostreremo i distributori\npiù convenienti lungo il percorso',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textDisabled),
-          ),
-        ],
+            const SizedBox(height: 4),
+            const Text(
+              'Ti mostreremo i distributori\npiù convenienti lungo il percorso',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.textDisabled),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -300,30 +316,49 @@ class _LoadingState extends StatelessWidget {
 // ── Errore ───────────────────────────────────────────────────
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState();
+  final String? message;
+  const _ErrorState({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.error_outline_rounded, size: 40, color: AppColors.prezzoHigh),
-          SizedBox(height: 12),
-          Text(
-            'Impossibile calcolare il percorso',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                size: 40, color: AppColors.prezzoHigh),
+            const SizedBox(height: 12),
+            const Text(
+              'Impossibile calcolare il percorso',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Verifica la connessione e riprova',
-            style: TextStyle(fontSize: 12, color: AppColors.textDisabled),
-          ),
-        ],
+            if (message != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.prezzoHighBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: AppColors.prezzoHigh.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  message!,
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.prezzoHigh),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -335,25 +370,54 @@ class _TripResult extends ConsumerWidget {
   final TripResult result;
   const _TripResult({required this.result});
 
+  // Tier basato sul prezzo effettivo, non sull'indice
+  List<PriceTier> _computeTiers(List<Distributore> stations) {
+    final prices = stations.map((d) => d.prezzoBest).toList();
+    final nonNull = prices.whereType<double>().toList()..sort();
+    if (nonNull.isEmpty) return List.filled(stations.length, PriceTier.mid);
+    final min = nonNull.first;
+    final max = nonNull.last;
+    final range = max - min;
+    return prices.map((p) {
+      if (p == null) return PriceTier.mid;
+      if (range < 0.001) return PriceTier.best;
+      final n = (p - min) / range;
+      if (n < 0.33) return PriceTier.best;
+      if (n < 0.67) return PriceTier.mid;
+      return PriceTier.high;
+    }).toList();
+  }
+
+  int _bestPriceIndex(List<Distributore> stations) {
+    if (stations.isEmpty) return -1;
+    double? best;
+    int idx = -1;
+    for (int i = 0; i < stations.length; i++) {
+      final p = stations[i].prezzoBest;
+      if (p != null && (best == null || p < best)) {
+        best = p;
+        idx = i;
+      }
+    }
+    return idx;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locationAsync = ref.watch(locationProvider);
     final mid = TripRepository.midpoint(result.routePoints);
+    final tiers = _computeTiers(result.stations);
+    final bestIdx = _bestPriceIndex(result.stations);
 
     return Stack(
       children: [
-        // Mappa con percorso e stazioni
         FlutterMap(
-          options: MapOptions(
-            initialCenter: mid,
-            initialZoom: 7,
-          ),
+          options: MapOptions(initialCenter: mid, initialZoom: 7),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.pienoamico.app',
             ),
-            // Percorso
             PolylineLayer(
               polylines: [
                 Polyline(
@@ -363,7 +427,6 @@ class _TripResult extends ConsumerWidget {
                 ),
               ],
             ),
-            // Posizione utente
             locationAsync.whenData((pos) => MarkerLayer(
                   markers: [
                     Marker(
@@ -371,6 +434,8 @@ class _TripResult extends ConsumerWidget {
                       width: 20,
                       height: 20,
                       child: Container(
+                        width: 20,
+                        height: 20,
                         decoration: BoxDecoration(
                           color: AppColors.brandBlue,
                           shape: BoxShape.circle,
@@ -387,7 +452,6 @@ class _TripResult extends ConsumerWidget {
                   ],
                 )).valueOrNull ??
                 const MarkerLayer(markers: []),
-            // Marker stazioni
             MarkerLayer(
               markers: result.stations
                   .asMap()
@@ -397,8 +461,12 @@ class _TripResult extends ConsumerWidget {
                       point: LatLng(e.value.latitudine, e.value.longitudine),
                       width: 28,
                       height: 28,
-                      child: _StationMarker(
-                        tier: _tier(e.key, result.stations.length),
+                      child: GestureDetector(
+                        onTap: () => context.push(
+                          '/detail/${e.value.id}',
+                          extra: e.value,
+                        ),
+                        child: _StationMarker(tier: tiers[e.key]),
                       ),
                     ),
                   )
@@ -407,7 +475,6 @@ class _TripResult extends ConsumerWidget {
           ],
         ),
 
-        // Bottom sheet con lista stazioni
         DraggableScrollableSheet(
           initialChildSize: 0.32,
           minChildSize: 0.12,
@@ -427,7 +494,6 @@ class _TripResult extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  // Handle
                   Container(
                     margin: const EdgeInsets.only(top: 10, bottom: 8),
                     width: 36,
@@ -437,7 +503,6 @@ class _TripResult extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  // Header
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                     child: Row(
@@ -446,14 +511,13 @@ class _TripResult extends ConsumerWidget {
                             size: 14, color: AppColors.primary),
                         const SizedBox(width: 6),
                         Text(
-                          '${result.stations.length} distributori sul percorso',
+                          '${result.stations.length} distributori — ordine di percorso',
                           style: AppTextStyles.sectionLabel,
                         ),
                       ],
                     ),
                   ),
                   const Divider(height: 1, color: AppColors.divider),
-                  // Lista
                   Expanded(
                     child: result.stations.isEmpty
                         ? const Center(
@@ -475,7 +539,8 @@ class _TripResult extends ConsumerWidget {
                             itemBuilder: (ctx, i) => _TripStationCard(
                               distributore: result.stations[i],
                               rank: i + 1,
-                              tier: _tier(i, result.stations.length),
+                              tier: tiers[i],
+                              isBestPrice: i == bestIdx,
                               onTap: () => ctx.push(
                                 '/detail/${result.stations[i].id}',
                                 extra: result.stations[i],
@@ -490,14 +555,6 @@ class _TripResult extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  PriceTier _tier(int index, int total) {
-    if (total <= 1) return PriceTier.best;
-    final n = index / (total - 1);
-    if (n < 0.33) return PriceTier.best;
-    if (n < 0.67) return PriceTier.mid;
-    return PriceTier.high;
   }
 }
 
@@ -516,6 +573,8 @@ class _StationMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         color: _color,
         shape: BoxShape.circle,
@@ -539,12 +598,14 @@ class _TripStationCard extends StatelessWidget {
   final Distributore distributore;
   final int rank;
   final PriceTier tier;
+  final bool isBestPrice;
   final VoidCallback onTap;
 
   const _TripStationCard({
     required this.distributore,
     required this.rank,
     required this.tier,
+    required this.isBestPrice,
     required this.onTap,
   });
 
@@ -560,11 +621,11 @@ class _TripStationCard extends StatelessWidget {
         PriceTier.high => AppColors.prezzoHighBg,
       };
 
-  String get _distanzaStrada {
+  // distanzaM = km dal punto di partenza lungo il percorso
+  String get _kmDaPartenza {
     final m = distributore.distanzaM;
-    if (m < 100) return 'sulla strada';
-    if (m < 1000) return 'a ${m}m dalla strada';
-    return 'a ${(m / 1000).toStringAsFixed(1)}km dalla strada';
+    if (m < 1000) return 'a ${m}m dalla partenza';
+    return 'a ${(m / 1000).toStringAsFixed(0)}km dalla partenza';
   }
 
   @override
@@ -631,11 +692,24 @@ class _TripStationCard extends StatelessWidget {
                           const Icon(Icons.near_me_rounded,
                               size: 11, color: AppColors.primary),
                           const SizedBox(width: 3),
-                          Text(_distanzaStrada,
-                              style: AppTextStyles.distanza),
+                          Flexible(
+                            child: Text(
+                              _kmDaPartenza,
+                              style: AppTextStyles.distanza,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           if (d.isAutostradale) ...[
                             const SizedBox(width: 6),
                             _Pill(label: 'A', color: AppColors.prezzoMid),
+                          ],
+                          if (isBestPrice) ...[
+                            const SizedBox(width: 6),
+                            _Pill(
+                              label: 'MIGLIOR PREZZO',
+                              color: AppColors.prezzoTop,
+                            ),
                           ],
                         ],
                       ),

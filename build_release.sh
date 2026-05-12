@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Carica le variabili da .env se presente
 if [ -f scripts/.env ]; then
-  export $(grep -v '^#' scripts/.env | xargs)
+  set -a
+  source scripts/.env
+  set +a
 fi
 
 : "${SUPABASE_URL:?Variabile SUPABASE_URL non impostata}"

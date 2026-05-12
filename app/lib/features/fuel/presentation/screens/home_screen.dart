@@ -479,7 +479,7 @@ class _AppTabSelector extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           _Tab(
-            label: 'Pianifica viaggio',
+            label: 'Viaggio Intelligente',
             icon: Icons.route_rounded,
             selected: active == AppTab.viaggio,
             onTap: () {

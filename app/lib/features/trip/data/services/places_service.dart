@@ -21,7 +21,7 @@ class PlacesService {
         'locationBias': {
           'circle': {
             'center': {'latitude': nearLat, 'longitude': nearLon},
-            'radius': 100000.0,
+            'radius': 50000.0,
           },
         },
     };
@@ -37,7 +37,9 @@ class PlacesService {
         )
         .timeout(const Duration(seconds: 10));
 
-    if (response.statusCode != 200) return [];
+    if (response.statusCode != 200) {
+      throw Exception('Places API ${response.statusCode}: ${response.body}');
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final suggestions = data['suggestions'] as List? ?? [];
@@ -61,7 +63,9 @@ class PlacesService {
         )
         .timeout(const Duration(seconds: 10));
 
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      throw Exception('Places API ${response.statusCode}: ${response.body}');
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final location = data['location'] as Map<String, dynamic>?;

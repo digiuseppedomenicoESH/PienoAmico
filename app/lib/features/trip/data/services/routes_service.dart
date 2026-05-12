@@ -40,7 +40,9 @@ class RoutesService {
         )
         .timeout(const Duration(seconds: 15));
 
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      throw Exception('Routes API ${response.statusCode}: ${response.body}');
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final routes = data['routes'] as List?;

@@ -34,7 +34,9 @@ class TripRepository {
       destLat: dest.lat,
       destLon: dest.lon,
     );
-    if (routePoints == null || routePoints.isEmpty) return null;
+    if (routePoints == null || routePoints.isEmpty) {
+      throw Exception('Nessun percorso trovato tra origine e destinazione');
+    }
 
     final stations = await _datasource.getFuelAlongRoute(
       routePoints: routePoints,

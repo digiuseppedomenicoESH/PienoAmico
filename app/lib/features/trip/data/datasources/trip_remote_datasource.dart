@@ -11,8 +11,8 @@ class TripRemoteDatasource {
   Future<List<Distributore>> getFuelAlongRoute({
     required List<LatLng> routePoints,
     required String carburante,
-    int bufferM = 15000,
-    int limit = 20,
+    int bufferM = 20000,
+    int zoneCount = 8,
   }) async {
     final sampled = _sample(routePoints, maxPoints: 60);
 
@@ -24,7 +24,7 @@ class TripRemoteDatasource {
       'p_waypoints': waypointsJson,
       'p_carburante': carburante,
       'p_buffer_m': bufferM,
-      'p_limit': limit,
+      'p_zone_count': zoneCount,
     });
 
     return (response as List)
